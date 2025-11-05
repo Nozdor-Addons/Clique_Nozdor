@@ -761,3 +761,48 @@ function Clique:ADDON_LOADED(event, addon)
         self:EnableArenaFrames()
     end
 end
+
+function Clique:EnableCompactRaidFrames()
+    local function registerOne(f)
+        if f and not ClickCastFrames[f] then
+            ClickCastFrames[f] = true
+        end
+    end
+
+    local function sweep()
+        for i = 1, 80 do
+            registerOne(_G["CompactRaidFrame"..i])
+            registerOne(_G["CompactRaidFrameMember"..i])
+        end
+    end
+
+    sweep()
+    if not self:IsTimerScheduled("Clique_CRFSweep") then
+        self:ScheduleRepeatingTimer("Clique_CRFSweep", sweep, 2)
+    end
+
+	hooksecurefunc("CreateFrame", function(frameType, name, parent, template)
+		local ok = pcall(function()
+			if type(name) == "string" and name:match("^CompactRaidFrame%d+$") then
+				local f = _G[name]
+				if f and not ClickCastFrames[f] then
+					ClickCastFrames[f] = true
+				end
+				return
+			end
+
+			if type(template) == "string" and template:find("CompactRaid", 1, true) then
+				if type(name) == "string" then
+					local f = _G[name]
+					if f and not ClickCastFrames[f] then
+						ClickCastFrames[f] = true
+					end
+				end
+			end
+		end)
+	end)
+end
+
+hooksecurefunc(Clique, "EnableFrames", function(self)
+    self:EnableCompactRaidFrames()
+end)
