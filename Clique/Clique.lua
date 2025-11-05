@@ -764,7 +764,7 @@ end
 
 function Clique:EnableCompactRaidFrames()
     local function registerOne(f)
-        if f and not ClickCastFrames[f] then
+        if f and f.RegisterForClicks and not ClickCastFrames[f] then
             ClickCastFrames[f] = true
         end
     end
@@ -773,6 +773,12 @@ function Clique:EnableCompactRaidFrames()
         for i = 1, 80 do
             registerOne(_G["CompactRaidFrame"..i])
             registerOne(_G["CompactRaidFrameMember"..i])
+            registerOne(_G["CompactPartyFrameMember"..i])
+        end
+        for g = 1, 8 do
+            for m = 1, 10 do
+                registerOne(_G["CompactRaidGroup"..g.."Member"..m])
+            end
         end
     end
 
@@ -781,26 +787,21 @@ function Clique:EnableCompactRaidFrames()
         self:ScheduleRepeatingTimer("Clique_CRFSweep", sweep, 2)
     end
 
-	hooksecurefunc("CreateFrame", function(frameType, name, parent, template)
-		local ok = pcall(function()
-			if type(name) == "string" and name:match("^CompactRaidFrame%d+$") then
-				local f = _G[name]
-				if f and not ClickCastFrames[f] then
-					ClickCastFrames[f] = true
-				end
-				return
-			end
-
-			if type(template) == "string" and template:find("CompactRaid", 1, true) then
-				if type(name) == "string" then
-					local f = _G[name]
-					if f and not ClickCastFrames[f] then
-						ClickCastFrames[f] = true
-					end
-				end
-			end
-		end)
-	end)
+    hooksecurefunc("CreateFrame", function(frameType, name, parent, template)
+        local ok = pcall(function()
+            if type(name) == "string" and (
+                name:match("^CompactRaidGroup%d+Member%d+$") or
+                name:match("^CompactRaidFrame%d+$") or
+                name:match("^CompactRaidFrameMember%d+$") or
+                name:match("^CompactPartyFrameMember%d+$")
+            ) then
+                registerOne(_G[name]); return
+            end
+            if type(template) == "string" and (template:find("CompactRaid",1,true) or template:find("CompactUnit",1,true)) then
+                if type(name) == "string" then registerOne(_G[name]) end
+            end
+        end)
+    end)
 end
 
 hooksecurefunc(Clique, "EnableFrames", function(self)
